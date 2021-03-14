@@ -7,4 +7,4 @@ all:
 	@$(comp) -o $(out) $(src) $(std)
 
 run:
-	@echo "Usage: ./$(out) <dir-name>"
+	@echo "Usage: ./$(out) <project-name>"

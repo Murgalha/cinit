@@ -69,12 +69,12 @@ void create_makefile() {
 int main(int argc, char *argv[]) {
 	if(argc < 2) {
 		printf("No directory name provided!\n");
-		printf("Usage: %s <dir-name>\n", argv[0]);
+		printf("Usage: %s <project-name>\n", argv[0]);
 		exit(1);
 	}
 	else if(argc > 2) {
 		printf("Invalid number of arguments. Please provide only one!\n");
-		printf("Usage: %s <dir-name>\n", argv[0]);
+		printf("Usage: %s <project-name>\n", argv[0]);
 		exit(1);
 	}
 
