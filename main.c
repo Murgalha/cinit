@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
 	d = opendir(project_name);
 	if (d) {
 		while((directory = readdir(d))) {
-			if(!strcmp(directory->d_name, ".") && !strcmp(directory->d_name, "..")) {
-				printf("Directory not empty! Please select a new or empty directory");
+			if(!strcmp(directory->d_name, ".") || !strcmp(directory->d_name, "..")) {
+				printf("Directory not empty!\nPlease select a new or empty directory\n");
 				exit(1);
 			}
 		}
