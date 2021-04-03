@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#define MTB_STR_IMPLEMENTATION
+#include "mtb_str.h"
 
 char project_name[100] = {0};
 
@@ -18,7 +20,7 @@ void create_file(char *filename, char *content) {
 	FILE *fp = fopen(filename, "w");
 	if(!fp) {
 		printf("Could not create '%s'\n", filename);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	fprintf(fp, "%s", content);
@@ -28,12 +30,7 @@ void create_file(char *filename, char *content) {
 }
 
 void create_makefile() {
-	char out[256] = {0};
-
-	// copy the name of the project to the 'out=' line
-	strcpy(out, "out=");
-	strcat(out, project_name);
-	strcat(out, "\n");
+	char *out = mtbs_join(3, "out=", project_name, "\n");
 
 	// because we need to concatenate the Makefile content with
 	// the name of the project, the file string is split in 2
@@ -53,16 +50,11 @@ void create_makefile() {
 		"run:\n"
 		"\t@./$(out)\n"
 	};
-	int total_len = strlen(out) + strlen(makefile_str1) + strlen(makefile_str2);
 
-	// Alloc and copy Makefile content to a single char *
-	char *makefile_content = calloc(total_len + 1, sizeof(char));
-	strcat(makefile_content, makefile_str1);
-	strcat(makefile_content, out);
-	strcat(makefile_content, makefile_str2);
-	makefile_content[total_len] = '\0';
+	char *makefile_content = mtbs_join(3, makefile_str1, out, makefile_str2);
 	create_file("Makefile", makefile_content);
 
+	free(out);
 	free(makefile_content);
 }
 
@@ -87,7 +79,8 @@ int main(int argc, char *argv[]) {
 		while((directory = readdir(d))) {
 			if(!strcmp(directory->d_name, ".") || !strcmp(directory->d_name, "..")) {
 				printf("Directory not empty!\nPlease select a new or empty directory\n");
-				exit(1);
+				closedir(d);
+				exit(EXIT_FAILURE);
 			}
 		}
     }
@@ -102,5 +95,5 @@ int main(int argc, char *argv[]) {
 	create_makefile();
 	create_file("src/main.c", empty_main);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
