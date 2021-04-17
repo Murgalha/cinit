@@ -3,12 +3,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <dirent.h>
 #include <string.h>
 #define MTB_STR_IMPLEMENTATION
 #include "mtb_str.h"
 
-char project_name[100] = {0};
+char *project_name = NULL;
+char *compiler = NULL;
 
 char *empty_main = {
 	"int main(int argc, char *argv[]) {\n"
@@ -16,10 +18,16 @@ char *empty_main = {
 	"}\n"
 };
 
+void free_globals() {
+	free(project_name);
+	free(compiler);
+}
+
 void create_file(char *filename, char *content) {
 	FILE *fp = fopen(filename, "w");
 	if(!fp) {
 		printf("Could not create '%s'\n", filename);
+		free_globals();
 		exit(EXIT_FAILURE);
 	}
 
@@ -34,8 +42,8 @@ void create_makefile() {
 
 	// because we need to concatenate the Makefile content with
 	// the name of the project, the file string is split in 2
+	char *compiler_str = mtbs_join(3, "comp=", compiler, "\n");
 	char *makefile_str1 = {
-		"comp=clang\n"
 		"src=src/*.c\n"
 		"incl=-Iinclude\n"
 	};
@@ -51,26 +59,44 @@ void create_makefile() {
 		"\t@./$(out)\n"
 	};
 
-	char *makefile_content = mtbs_join(3, makefile_str1, out, makefile_str2);
+	char *makefile_content = mtbs_join(4, compiler_str, makefile_str1, out, makefile_str2);
 	create_file("Makefile", makefile_content);
 
+	free(compiler_str);
 	free(out);
 	free(makefile_content);
 }
 
 int main(int argc, char *argv[]) {
-	if(argc < 2) {
-		printf("No directory name provided!\n");
-		printf("Usage: %s <project-name>\n", argv[0]);
-		exit(1);
-	}
-	else if(argc > 2) {
-		printf("Invalid number of arguments. Please provide only one!\n");
-		printf("Usage: %s <project-name>\n", argv[0]);
-		exit(1);
+	int opt;
+	while((opt = getopt(argc, argv, "c:")) != -1) {
+        switch(opt) {
+		case 'c':
+			compiler = mtbs_new(optarg);
+			break;
+		case ':':
+			printf("option needs a value\n");
+			exit(EXIT_FAILURE);
+			break;
+		case '?':
+			// TODO: Show help
+			free_globals();
+			exit(EXIT_FAILURE);
+			break;
+        }
+    }
+	if(!compiler) {
+		compiler = mtbs_new("gcc");
 	}
 
-	strcpy(project_name, argv[1]);
+	if(optind != argc-1) {
+		// TODO: Show help
+		printf("Invalid arguments! Must provide project name\n");
+		free_globals();
+		exit(EXIT_FAILURE);
+	}
+	project_name = mtbs_new(argv[optind]);
+
 	DIR *d;
 	struct dirent *directory;
 
@@ -80,6 +106,7 @@ int main(int argc, char *argv[]) {
 			if(!strcmp(directory->d_name, ".") || !strcmp(directory->d_name, "..")) {
 				printf("Directory not empty!\nPlease select a new or empty directory\n");
 				closedir(d);
+				free_globals();
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -95,5 +122,6 @@ int main(int argc, char *argv[]) {
 	create_makefile();
 	create_file("src/main.c", empty_main);
 
+	free_globals();
 	return EXIT_SUCCESS;
 }

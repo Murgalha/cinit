@@ -1,4 +1,4 @@
-comp=clang
+comp=gcc
 src=src/*.c
 incl=-Iinclude
 out=cinit

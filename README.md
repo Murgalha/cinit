@@ -1,13 +1,21 @@
 # cinit
 Create a file structure and Makefile for your C projects.
-The Makefile defaults to c99 and clang.
+The Makefile defaults to c99 and gcc.
 
 ## Usage
 Compile the program with `make` and invoke it with the following command:
 
 ```sh
-./cinit <project-name>
+cinit <project-name>
 ```
+
+### Command line options
+You can use command line options with cinit. The only current one now is `-c`, like so:
+```sh
+cinit -c <compiler> <project-name>
+```
+Note: The compiler will simply be copied to the Makefile without any checks. Make sure you have installed
+and the executable is in the `PATH` variable.
 
 ## Structure
 This command will create the following structure:
@@ -31,7 +39,7 @@ int main(int argc, char *argv[]) {
 
 ### `Makefile`
 ```make
-comp=clang
+comp=<compiler> (default: gcc)
 src=src/*.c
 incl=-Iinclude
 out=<project-name>
