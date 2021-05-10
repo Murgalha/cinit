@@ -68,8 +68,13 @@ void create_makefile() {
 }
 
 int main(int argc, char *argv[]) {
-	int opt;
-	while((opt = getopt(argc, argv, "c:")) != -1) {
+	int opt, indexptr;
+	struct option long_options[] = {
+		{"compiler", required_argument, 0, 'c'},
+		{0, 0, 0, 0}
+	};
+
+	while((opt = getopt_long(argc, argv, "c:", long_options, &indexptr)) != -1) {
         switch(opt) {
 		case 'c':
 			compiler = mtbs_new(optarg);
