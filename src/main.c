@@ -10,6 +10,7 @@
 #include "mtb_str.h"
 
 char *project_name = NULL;
+char *project_path = NULL;
 char *compiler = NULL;
 
 char *empty_main = {
@@ -21,6 +22,14 @@ char *empty_main = {
 void free_globals() {
 	free(project_name);
 	free(compiler);
+}
+
+char *basename(char *path) {
+	int n;
+	char **tokens = mtbs_split(path, &n, "/");
+	char *base = mtbs_new(tokens[n-1]);
+	mtbs_free_split(tokens, n);
+	return base;
 }
 
 void create_file(char *filename, char *content) {
@@ -90,22 +99,23 @@ int main(int argc, char *argv[]) {
 			break;
         }
     }
-	if(!compiler) {
-		compiler = mtbs_new("gcc");
-	}
-
 	if(optind != argc-1) {
 		// TODO: Show help
 		printf("Invalid arguments! Must provide project name\n");
 		free_globals();
 		exit(EXIT_FAILURE);
 	}
-	project_name = mtbs_new(argv[optind]);
+	if(!compiler) {
+		compiler = mtbs_new("gcc");
+	}
 
+	project_path = mtbs_new(argv[optind]);
+	project_name = basename(argv[optind]);
+	printf("Project name: '%s'\n", project_name);
 	DIR *d;
 	struct dirent *directory;
 
-	d = opendir(project_name);
+	d = opendir(project_path);
 	if (d) {
 		while((directory = readdir(d))) {
 			if(!strcmp(directory->d_name, ".") || !strcmp(directory->d_name, "..")) {
@@ -117,9 +127,9 @@ int main(int argc, char *argv[]) {
 		}
     }
 	else
-		mkdir(project_name, 0777);
+		mkdir(project_path, 0777);
 
-	chdir(project_name);
+	chdir(project_path);
 	// Create directories
 	mkdir("src", 0777);
 	mkdir("include", 0777);
