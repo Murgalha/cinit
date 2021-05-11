@@ -12,6 +12,8 @@
 char *project_name = NULL;
 char *project_path = NULL;
 char *compiler = NULL;
+char *extension = NULL;
+int cpp_flag = 0;
 
 char *empty_main = {
 	"int main(int argc, char *argv[]) {\n"
@@ -21,7 +23,9 @@ char *empty_main = {
 
 void free_globals() {
 	free(project_name);
+	free(project_path);
 	free(compiler);
+	free(extension);
 }
 
 char *basename(char *path) {
@@ -48,18 +52,20 @@ void create_file(char *filename, char *content) {
 
 void create_makefile() {
 	char *out = mtbs_join(3, "out=", project_name, "\n");
+	char *std = mtbs_join(3, "std=-std=", (cpp_flag ? "c++98" : "c99"), "\n\n");
+	char *src = mtbs_join(3, "src=src/*", extension, "\n");
 
 	// because we need to concatenate the Makefile content with
 	// the name of the project, the file string is split in 2
 	char *compiler_str = mtbs_join(3, "comp=", compiler, "\n");
 	char *makefile_str1 = {
-		"src=src/*.c\n"
 		"incl=-Iinclude\n"
 	};
 
 	char *makefile_str2 = {
 		"libs=\n"
-		"std=-std=c99\n\n"
+	};
+	char *makefile_str3 = {
 		"all:\n"
 		"\t@$(comp) -o $(out) $(src) $(incl) $(libs) $(std)\n\n"
 		"debug:\n"
@@ -68,11 +74,14 @@ void create_makefile() {
 		"\t@./$(out)\n"
 	};
 
-	char *makefile_content = mtbs_join(4, compiler_str, makefile_str1, out, makefile_str2);
+	char *makefile_content = mtbs_join(7, compiler_str, src, makefile_str1, out, makefile_str2,
+									   std, makefile_str3);
 	create_file("Makefile", makefile_content);
 
 	free(compiler_str);
 	free(out);
+	free(std);
+	free(src);
 	free(makefile_content);
 }
 
@@ -80,6 +89,7 @@ int main(int argc, char *argv[]) {
 	int opt, indexptr;
 	struct option long_options[] = {
 		{"compiler", required_argument, 0, 'c'},
+		{"cpp", no_argument, &cpp_flag, 1},
 		{0, 0, 0, 0}
 	};
 
@@ -99,6 +109,7 @@ int main(int argc, char *argv[]) {
 			break;
         }
     }
+
 	if(optind != argc-1) {
 		// TODO: Show help
 		printf("Invalid arguments! Must provide project name\n");
@@ -106,12 +117,22 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	if(!compiler) {
-		compiler = mtbs_new("gcc");
+		if(cpp_flag)
+			compiler = mtbs_new("g++");
+		else
+			compiler = mtbs_new("gcc");
 	}
 
 	project_path = mtbs_new(argv[optind]);
 	project_name = basename(argv[optind]);
-	printf("Project name: '%s'\n", project_name);
+
+	if(cpp_flag) {
+		extension = mtbs_new(".cpp");
+	}
+	else {
+		extension = mtbs_new(".c");
+	}
+
 	DIR *d;
 	struct dirent *directory;
 
@@ -135,7 +156,10 @@ int main(int argc, char *argv[]) {
 	mkdir("include", 0777);
 	// Create files
 	create_makefile();
-	create_file("src/main.c", empty_main);
+
+	char *main_filename = mtbs_join(2, "src/main", extension);
+	create_file(main_filename, empty_main);
+	free(main_filename);
 
 	free_globals();
 	return EXIT_SUCCESS;
