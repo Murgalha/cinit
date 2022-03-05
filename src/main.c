@@ -21,8 +21,8 @@ char *main_content = {
 	"\tprintf(\"Args: %d\\n\", argc);\n\n"
 	"\tint i;\n"
 	"\tfor(i = 0; i < argc; i++) {\n"
-		"\t\tprintf(\"Arg #%d: %s\\n\", i, argv[i]);"
-	"\t}\n\n"
+		"\t\tprintf(\"Arg #%d: %s\\n\", i, argv[i]);\n"
+	"\t}\n"
 	"\treturn 0;\n"
 	"}\n"
 };
