@@ -15,8 +15,14 @@ char *compiler = NULL;
 char *extension = NULL;
 int cpp_flag = 0;
 
-char *empty_main = {
+char *main_content = {
+	"#include <stdio.h>\n\n"
 	"int main(int argc, char *argv[]) {\n"
+	"\tprintf(\"Args: %d\\n\", argc);\n\n"
+	"\tint i;\n"
+	"\tfor(i = 0; i < argc; i++) {\n"
+		"\t\tprintf(\"Arg #%d: %s\\n\", i, argv[i]);\n"
+	"\t}\n"
 	"\treturn 0;\n"
 	"}\n"
 };
@@ -51,37 +57,61 @@ void create_file(char *filename, char *content) {
 }
 
 void create_makefile() {
-	char *out = mtbs_join(3, "out=", project_name, "\n");
-	char *std = mtbs_join(3, "std=-std=", (cpp_flag ? "c++98" : "c99"), "\n\n");
-	char *src = mtbs_join(3, "src=src/*", extension, "\n");
-
 	// because we need to concatenate the Makefile content with
 	// the name of the project, the file string is split in 2
-	char *compiler_str = mtbs_join(3, "comp=", compiler, "\n");
-	char *makefile_str1 = {
-		"incl=-Iinclude\n"
+	char *compiler_str = mtbs_join(3, "CC ?= ", compiler, "\n");
+	char *std = mtbs_join(3, "STD=-std=", (cpp_flag ? "c++98" : "c99"), "\n\n");
+
+	char *comp_str = {
+		"SRCDIR=src/\n"
+		"INCLUDEDIR=include/\n"
+		"WARNFLAGS=-Wall -Wextra -Werror\n"
 	};
 
-	char *makefile_str2 = {
-		"libs=\n"
+	char *wrkdir_str = {
+		"WRKDIR=build/\n"
+		"OBJDIR := ${WRKDIR}obj/\n"
+		"HEADERFILES := $(wildcard ${INCLUDEDIR}*.h)\n"
 	};
-	char *makefile_str3 = {
-		"all:\n"
-		"\t@$(comp) -o $(out) $(src) $(incl) $(libs) $(std)\n\n"
-		"debug:\n"
-		"\t@$(comp) -o $(out) $(src) $(incl) $(libs) $(std) -g\n\n"
+
+	char *src_files = mtbs_join(3, "SRCFILES := $(wildcard ${SRCDIR}*", extension, ")\n");
+	char *obj_files = mtbs_join(3, "OBJFILES := ${addprefix ${OBJDIR}, ${notdir ${SRCFILES:", extension, "=.o}}}\n\n");
+	char *bin = mtbs_join(3, "# EXECUTABLE STUFF\nBIN=", project_name, "\n");
+
+	char *content_1 = {
+		"BINDIR := ${WRKDIR}bin/\n"
+		"BINFILE := ${BINDIR}${BIN}\n\n"
+		"all: prepare ${BINFILE}\n\n"
+	};
+	char *obj_target = mtbs_join(3, "${OBJDIR}%.o: ${SRCDIR}%", extension, " ${HEADERFILES}\n");
+
+	char *content_2 = {
+		"\t$(CC) -c $< ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n"
+
+		"${BINFILE}: ${OBJFILES}\n"
+		"\t$(CC) $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n"
+
 		"run:\n"
-		"\t@./$(out)\n"
+		"\t@./${BINFILE}\n\n"
+
+		"prepare:\n"
+		"\t@if [ ! -d \"${WRKDIR}\" ]; then mkdir ${WRKDIR}; fi\n"
+		"\t@if [ ! -d \"${OBJDIR}\" ]; then mkdir ${OBJDIR}; fi\n"
+		"\t@if [ ! -d \"${BINDIR}\" ]; then mkdir ${BINDIR}; fi\n\n"
+
+		"clear:\n"
+		"\trm -rf ${WRKDIR}\n"
 	};
 
-	char *makefile_content = mtbs_join(7, compiler_str, src, makefile_str1, out, makefile_str2,
-									   std, makefile_str3);
+	char *makefile_content = mtbs_join(10, compiler_str, comp_str, std, wrkdir_str,
+									   src_files, obj_files, bin, content_1, obj_target, content_2);
 	create_file("Makefile", makefile_content);
 
 	free(compiler_str);
-	free(out);
 	free(std);
-	free(src);
+	free(src_files);
+	free(obj_files);
+	free(bin);
 	free(makefile_content);
 }
 
@@ -158,7 +188,7 @@ int main(int argc, char *argv[]) {
 	create_makefile();
 
 	char *main_filename = mtbs_join(2, "src/main", extension);
-	create_file(main_filename, empty_main);
+	create_file(main_filename, main_content);
 	free(main_filename);
 
 	free_globals();
