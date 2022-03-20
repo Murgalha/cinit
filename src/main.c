@@ -59,7 +59,8 @@ void create_file(char *filename, char *content) {
 void create_makefile() {
 	// because we need to concatenate the Makefile content with
 	// the name of the project, the file string is split in 2
-	char *compiler_str = mtbs_join(3, "CC ?= ", compiler, "\n");
+	char *compiler_var = (cpp_flag ? "CXX" : "CC");
+	char *compiler_str = mtbs_join(4, compiler_var, " ?= ", compiler, "\n");
 	char *std = mtbs_join(3, "STD=-std=", (cpp_flag ? "c++98" : "c99"), "\n\n");
 
 	char *comp_str = {
@@ -85,12 +86,10 @@ void create_makefile() {
 	};
 	char *obj_target = mtbs_join(3, "${OBJDIR}%.o: ${SRCDIR}%", extension, " ${HEADERFILES}\n");
 
+	char *compilation_string = mtbs_join(3, "\t$(", compiler_var, ") -c $< ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n");
+	char *exe_creation_string = mtbs_join(3, "${BINFILE}: ${OBJFILES}\n\t$(", compiler_var, ") $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n");
+
 	char *content_2 = {
-		"\t$(CC) -c $< ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n"
-
-		"${BINFILE}: ${OBJFILES}\n"
-		"\t$(CC) $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n"
-
 		"run:\n"
 		"\t@./${BINFILE}\n\n"
 
@@ -103,8 +102,8 @@ void create_makefile() {
 		"\trm -rf ${WRKDIR}\n"
 	};
 
-	char *makefile_content = mtbs_join(10, compiler_str, comp_str, std, wrkdir_str,
-									   src_files, obj_files, bin, content_1, obj_target, content_2);
+	char *makefile_content = mtbs_join(12, compiler_str, comp_str, std, wrkdir_str,
+									   src_files, obj_files, bin, content_1, obj_target, compilation_string, exe_creation_string, content_2);
 	create_file("Makefile", makefile_content);
 
 	free(compiler_str);
