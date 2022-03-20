@@ -59,6 +59,7 @@ CC ?= <compiler>
 SRCDIR=src/
 INCLUDEDIR=include/
 WARNFLAGS=-Wall -Wextra -Werror
+LIBS=
 STD=-std=<std>
 
 WRKDIR=build/
@@ -78,7 +79,7 @@ ${OBJDIR}%.o: ${SRCDIR}%.c ${HEADERFILES}
 	$(CC) -c $< ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}
 
 ${BINFILE}: ${OBJFILES}
-	$(CC) $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}
+	$(CC) $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD} ${LIBS}
 
 run:
 	@./${BINFILE}

@@ -67,6 +67,7 @@ void create_makefile() {
 		"SRCDIR=src/\n"
 		"INCLUDEDIR=include/\n"
 		"WARNFLAGS=-Wall -Wextra -Werror\n"
+		"LIBS=\n"
 	};
 
 	char *wrkdir_str = {
@@ -87,7 +88,7 @@ void create_makefile() {
 	char *obj_target = mtbs_join(3, "${OBJDIR}%.o: ${SRCDIR}%", extension, " ${HEADERFILES}\n");
 
 	char *compilation_string = mtbs_join(3, "\t$(", compiler_var, ") -c $< ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n");
-	char *exe_creation_string = mtbs_join(3, "${BINFILE}: ${OBJFILES}\n\t$(", compiler_var, ") $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD}\n\n");
+	char *exe_creation_string = mtbs_join(3, "${BINFILE}: ${OBJFILES}\n\t$(", compiler_var, ") $^ ${WARNFLAGS} -I${INCLUDEDIR} -o $@ ${STD} ${LIBS}\n\n");
 
 	char *content_2 = {
 		"run:\n"
